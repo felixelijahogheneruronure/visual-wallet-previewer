@@ -51,14 +51,16 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
         quality: 10,
         width: previewRef.current.offsetWidth,
         height: previewRef.current.offsetHeight,
+        repeat: 0, // Loop forever
       });
 
-      // Capture multiple frames with different progress values
-      const frames = 30;
+      // Create 15 second animation with 150 frames (10 FPS)
+      const frames = 150;
       const originalStatus = previewRef.current.querySelector('#percent-text')?.textContent;
       
       for (let i = 0; i <= frames; i++) {
-        const progress = Math.round((i / frames) * 100);
+        // Create a smooth progress animation that goes from 0 to 100 and back
+        const progress = Math.round(50 + 50 * Math.sin((i / frames) * Math.PI * 4));
         
         // Update the progress display
         const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
@@ -73,7 +75,7 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
         }
 
         // Wait a bit for the change to render
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 30));
 
         const canvas = await html2canvas(previewRef.current, {
           backgroundColor: null,
@@ -81,22 +83,33 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
           useCORS: true,
         });
 
-        gif.addFrame(canvas, { delay: 100 });
+        gif.addFrame(canvas, { delay: 100 }); // 100ms = 10 FPS
+        
+        // Update progress for user feedback
+        const exportProgress = Math.round((i / frames) * 100);
+        toast.info(`Capturing frames... ${exportProgress}%`);
       }
 
       // Restore original status
       const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
       if (progressText && originalStatus) progressText.textContent = originalStatus;
 
+      toast.info('Rendering GIF...');
+      
       gif.on('finished', (blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.download = 'wallet-preview.gif';
+        link.download = 'wallet-preview-15s.gif';
         link.href = url;
         link.click();
         URL.revokeObjectURL(url);
         toast.success('GIF exported successfully!');
         setIsExporting(false);
+      });
+
+      gif.on('progress', (progress) => {
+        const percent = Math.round(progress * 100);
+        toast.info(`Rendering GIF... ${percent}%`);
       });
 
       gif.render();
@@ -107,32 +120,54 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
     }
   };
 
-  const exportAsMP4 = async () => {
+  const exportAsWebM = async () => {
     if (!previewRef.current || isExporting) return;
 
     setIsExporting(true);
-    toast.info('Starting MP4 export...');
+    toast.info('Starting WebM video export...');
 
     try {
-      const { FFmpeg } = await import('@ffmpeg/ffmpeg');
-      const { fetchFile, toBlobURL } = await import('@ffmpeg/util');
       const html2canvas = (await import('html2canvas')).default;
-
-      const ffmpeg = new FFmpeg();
       
-      // Load FFmpeg
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      // Create a canvas to record from
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = previewRef.current.offsetWidth;
+      canvas.height = previewRef.current.offsetHeight;
+
+      // Create MediaRecorder for WebM
+      const stream = canvas.captureStream(10); // 10 FPS
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp9'
       });
 
-      // Capture frames
-      const frames = 30;
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = 'wallet-preview-15s.webm';
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast.success('WebM video exported successfully!');
+        setIsExporting(false);
+      };
+
+      mediaRecorder.start();
+
+      // Record for 15 seconds
+      const frames = 150; // 15 seconds at 10 FPS
       const originalStatus = previewRef.current.querySelector('#percent-text')?.textContent;
       
       for (let i = 0; i <= frames; i++) {
-        const progress = Math.round((i / frames) * 100);
+        const progress = Math.round(50 + 50 * Math.sin((i / frames) * Math.PI * 4));
         
         // Update the progress display
         const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
@@ -146,50 +181,34 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
           progressCircle.style.strokeDashoffset = `${offset}`;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        const canvas = await html2canvas(previewRef.current, {
+        // Capture and draw to canvas
+        const htmlCanvas = await html2canvas(previewRef.current, {
           backgroundColor: null,
           scale: 1,
           useCORS: true,
         });
 
-        canvas.toBlob(async (blob) => {
-          if (blob) {
-            await ffmpeg.writeFile(`frame${i.toString().padStart(3, '0')}.png`, await fetchFile(blob));
-          }
-        }, 'image/png');
+        if (ctx) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(htmlCanvas, 0, 0, canvas.width, canvas.height);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100)); // 10 FPS
+        
+        const exportProgress = Math.round((i / frames) * 100);
+        if (i % 15 === 0) { // Update every 1.5 seconds
+          toast.info(`Recording... ${exportProgress}%`);
+        }
       }
 
       // Restore original status
       const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
       if (progressText && originalStatus) progressText.textContent = originalStatus;
 
-      // Convert frames to MP4
-      await ffmpeg.exec([
-        '-framerate', '10',
-        '-i', 'frame%03d.png',
-        '-c:v', 'libx264',
-        '-pix_fmt', 'yuv420p',
-        '-t', '3',
-        'output.mp4'
-      ]);
-
-      const data = await ffmpeg.readFile('output.mp4');
-      const blob = new Blob([data], { type: 'video/mp4' });
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.download = 'wallet-preview.mp4';
-      link.href = url;
-      link.click();
-      URL.revokeObjectURL(url);
-      
-      toast.success('MP4 exported successfully!');
-      setIsExporting(false);
+      mediaRecorder.stop();
     } catch (error) {
-      toast.error('MP4 export failed');
-      console.error('MP4 export failed:', error);
+      toast.error('WebM export failed');
+      console.error('WebM export failed:', error);
       setIsExporting(false);
     }
   };
@@ -211,16 +230,16 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
         className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
         disabled={isExporting}
       >
-        🎬 {isExporting ? 'Exporting...' : t('download_gif')}
+        🎬 {isExporting ? 'Exporting GIF...' : 'Export 15s GIF'}
       </Button>
       
       <Button
-        onClick={exportAsMP4}
+        onClick={exportAsWebM}
         variant="outline"
         className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
         disabled={isExporting}
       >
-        🎥 {isExporting ? 'Exporting...' : t('download_mp4')}
+        🎥 {isExporting ? 'Exporting Video...' : 'Export 15s WebM'}
       </Button>
     </div>
   );

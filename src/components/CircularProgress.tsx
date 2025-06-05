@@ -40,6 +40,18 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
           strokeWidth={strokeWidth}
           fill="transparent"
         />
+        {/* Animated loading ring */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="rgba(74, 222, 128, 0.3)"
+          strokeWidth={strokeWidth / 2}
+          fill="transparent"
+          strokeDasharray="20 10"
+          className="animate-spin"
+          style={{ animationDuration: '2s' }}
+        />
         {/* Progress circle */}
         <circle
           className="progress-ring__circle transition-all duration-1000 ease-out"
