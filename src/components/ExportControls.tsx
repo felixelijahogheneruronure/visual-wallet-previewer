@@ -54,13 +54,16 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
         repeat: 0, // Loop forever
       });
 
-      // Create 15 second animation with 150 frames (10 FPS)
-      const frames = 150;
-      const originalStatus = previewRef.current.querySelector('#percent-text')?.textContent;
+      // Get the current user input percentage
+      const currentPercentageElement = previewRef.current.querySelector('#percent-text') as HTMLElement;
+      const targetPercentage = parseInt(currentPercentageElement?.textContent?.replace('%', '') || '100');
+
+      // Create 5 second animation with 50 frames (10 FPS)
+      const frames = 50;
       
       for (let i = 0; i <= frames; i++) {
-        // Create a smooth progress animation that goes from 0 to 100 and back
-        const progress = Math.round(50 + 50 * Math.sin((i / frames) * Math.PI * 4));
+        // Progress from 0 to target percentage over 5 seconds
+        const progress = Math.round((i / frames) * targetPercentage);
         
         // Update the progress display
         const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
@@ -87,19 +90,21 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
         
         // Update progress for user feedback
         const exportProgress = Math.round((i / frames) * 100);
-        toast.info(`Capturing frames... ${exportProgress}%`);
+        if (i % 10 === 0) { // Update every second
+          toast.info(`Capturing frames... ${exportProgress}%`);
+        }
       }
 
       // Restore original status
       const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
-      if (progressText && originalStatus) progressText.textContent = originalStatus;
+      if (progressText) progressText.textContent = `${targetPercentage}%`;
 
       toast.info('Rendering GIF...');
       
       gif.on('finished', (blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.download = 'wallet-preview-15s.gif';
+        link.download = 'wallet-preview-5s.gif';
         link.href = url;
         link.click();
         URL.revokeObjectURL(url);
@@ -152,7 +157,7 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
         const blob = new Blob(chunks, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.download = 'wallet-preview-15s.webm';
+        link.download = 'wallet-preview-5s.webm';
         link.href = url;
         link.click();
         URL.revokeObjectURL(url);
@@ -162,12 +167,16 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
 
       mediaRecorder.start();
 
-      // Record for 15 seconds
-      const frames = 150; // 15 seconds at 10 FPS
-      const originalStatus = previewRef.current.querySelector('#percent-text')?.textContent;
+      // Get the current user input percentage
+      const currentPercentageElement = previewRef.current.querySelector('#percent-text') as HTMLElement;
+      const targetPercentage = parseInt(currentPercentageElement?.textContent?.replace('%', '') || '100');
+
+      // Record for 5 seconds
+      const frames = 50; // 5 seconds at 10 FPS
       
       for (let i = 0; i <= frames; i++) {
-        const progress = Math.round(50 + 50 * Math.sin((i / frames) * Math.PI * 4));
+        // Progress from 0 to target percentage over 5 seconds
+        const progress = Math.round((i / frames) * targetPercentage);
         
         // Update the progress display
         const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
@@ -196,14 +205,14 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
         await new Promise(resolve => setTimeout(resolve, 100)); // 10 FPS
         
         const exportProgress = Math.round((i / frames) * 100);
-        if (i % 15 === 0) { // Update every 1.5 seconds
+        if (i % 10 === 0) { // Update every second
           toast.info(`Recording... ${exportProgress}%`);
         }
       }
 
       // Restore original status
       const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
-      if (progressText && originalStatus) progressText.textContent = originalStatus;
+      if (progressText) progressText.textContent = `${targetPercentage}%`;
 
       mediaRecorder.stop();
     } catch (error) {
@@ -230,7 +239,7 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
         className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
         disabled={isExporting}
       >
-        🎬 {isExporting ? 'Exporting GIF...' : 'Export 15s GIF'}
+        🎬 {isExporting ? 'Exporting GIF...' : 'Export 5s GIF'}
       </Button>
       
       <Button
@@ -239,7 +248,7 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
         className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
         disabled={isExporting}
       >
-        🎥 {isExporting ? 'Exporting Video...' : 'Export 15s WebM'}
+        🎥 {isExporting ? 'Exporting Video...' : 'Export 5s WebM'}
       </Button>
     </div>
   );

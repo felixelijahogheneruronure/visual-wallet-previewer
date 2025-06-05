@@ -17,7 +17,7 @@ const Index = () => {
     balance: 'R$ 17,743.43',
     bank: 'Nubank',
     pixKey: '048.448.575.09',
-    status: 98
+    status: 100
   });
   const [language, setLanguage] = useState<Language>('en');
   const [isShaking, setIsShaking] = useState(false);
