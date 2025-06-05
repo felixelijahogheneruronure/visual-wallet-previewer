@@ -61,8 +61,8 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
         const progress = Math.round((i / frames) * 100);
         
         // Update the progress display
-        const progressText = previewRef.current.querySelector('#percent-text');
-        const progressCircle = previewRef.current.querySelector('.progress-ring__circle');
+        const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
+        const progressCircle = previewRef.current.querySelector('#progress-circle') as SVGCircleElement;
         
         if (progressText) progressText.textContent = `${progress}%`;
         if (progressCircle) {
@@ -85,7 +85,7 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
       }
 
       // Restore original status
-      const progressText = previewRef.current.querySelector('#percent-text');
+      const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
       if (progressText && originalStatus) progressText.textContent = originalStatus;
 
       gif.on('finished', (blob) => {
@@ -135,8 +135,8 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
         const progress = Math.round((i / frames) * 100);
         
         // Update the progress display
-        const progressText = previewRef.current.querySelector('#percent-text');
-        const progressCircle = previewRef.current.querySelector('.progress-ring__circle');
+        const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
+        const progressCircle = previewRef.current.querySelector('#progress-circle') as SVGCircleElement;
         
         if (progressText) progressText.textContent = `${progress}%`;
         if (progressCircle) {
@@ -162,7 +162,7 @@ export const ExportControls: React.FC<ExportControlsProps> = ({ previewRef, tran
       }
 
       // Restore original status
-      const progressText = previewRef.current.querySelector('#percent-text');
+      const progressText = previewRef.current.querySelector('#percent-text') as HTMLElement;
       if (progressText && originalStatus) progressText.textContent = originalStatus;
 
       // Convert frames to MP4
