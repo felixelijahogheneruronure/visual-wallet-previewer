@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,8 @@ import { ExportControls } from '@/components/ExportControls';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useTranslations } from '@/hooks/useTranslations';
 
+type Language = 'en' | 'pt' | 'es';
+
 const Index = () => {
   const [formData, setFormData] = useState({
     name: 'Valtenisson dos Santos',
@@ -18,7 +19,7 @@ const Index = () => {
     pixKey: '048.448.575.09',
     status: 98
   });
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState<Language>('en');
   const [isShaking, setIsShaking] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslations(language);
@@ -28,6 +29,10 @@ const Index = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage as Language);
   };
 
   const handleUpdate = () => {
@@ -52,7 +57,7 @@ const Index = () => {
           <Card className="p-6 bg-black/20 backdrop-blur-lg border-gray-700">
             <div className="space-y-6">
               {/* Language Selector */}
-              <LanguageSelector language={language} onLanguageChange={setLanguage} />
+              <LanguageSelector language={language} onLanguageChange={handleLanguageChange} />
 
               {/* Form Inputs */}
               <div className="space-y-4">

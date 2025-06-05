@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 
-type Language = 'en' | 'pt' | 'es';
+export type Language = 'en' | 'pt' | 'es';
 
 const translations = {
   en: {
